@@ -23,5 +23,4 @@ notifications:
 
 cache:
   directories:
-    - $HOME/.cache/rebar3/hex/default
-    - $HOME/.cache/rebar3/rebar3_${TRAVIS_OTP_RELEASE}_plt
+    - $HOME/.cache/rebar3
