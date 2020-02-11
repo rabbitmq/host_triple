@@ -1,3 +1,15 @@
+%% @author The RabbitMQ team
+%% @copyright 2020 Pivotal Software, Inc.
+%%
+%% @doc
+%% This module provides functions to get and manipulate uniform host
+%% triples.
+%%
+%% The main goal is to be able to be able to locate native libraries
+%% under the `priv' directory. Indeed, the return lib directories are
+%% not dependent to the host triple which set at Erlang/OTP compile
+%% time.
+
 -module(host_triple).
 
 -export([this_host/0,
@@ -16,10 +28,17 @@
                            vendor := binary(),
                            os     := binary(),
                            env    => binary()}.
--type wordsize() :: 4 | 8.
+%% A map representing a parsed host triple.
 
--spec this_host() ->
-    string().
+-type wordsize() :: 4 | 8.
+%% The host word size as returned by {@link erlang:system_info/1}.
+
+-spec this_host() -> string().
+%% @doc
+%% Returns the normalized host triple for the host running this Erlang
+%% VM instance.
+%%
+%% @returns the normalized host triple (string).
 
 this_host() ->
     SystemArch = erlang:system_info(system_architecture),
@@ -30,6 +49,12 @@ this_host() ->
     parsed_triple() |
     {error, {not_a_host_triple, Triple}}
       when Triple :: iolist().
+%% @doc
+%% Parses a string reprensenting a host triple.
+%%
+%% @param Triple a host triple (string).
+%% @returns the parsed host triple, or an tuple if the given host triple
+%% was not recognized.
 
 parse(Triple) when is_list(Triple) orelse is_binary(Triple) ->
     case string:lexemes(Triple, "-") of
@@ -57,6 +82,14 @@ parse(Triple) when is_list(Triple) orelse is_binary(Triple) ->
     parsed_triple() |
     {error, {unrecognized_host_triple, NotTriple}}
       when NotTriple :: iolist().
+%% @doc
+%% Normalizes a host triple.
+%%
+%% The given host triple can be a string or a parsed host triple.
+%%
+%% @param Triple a host triple (string or map).
+%% @returns the normalized host triple in the same form as the given
+%% argument, or an tuple if the given host triple was not recognized.
 
 normalize(Triple) ->
     normalize(Triple, undefined).
@@ -72,6 +105,18 @@ normalize(Triple) ->
     parsed_triple() |
     {error, {unrecognized_host_triple, NotTriple}}
       when NotTriple :: iolist().
+%% @doc
+%% Normalizes a host triple.
+%%
+%% The given host triple can be a string or a parsed host triple.
+%%
+%% `Wordsize' is used when the given host triple does not convey that
+%% information. This is the case of the host triple returned by {@link
+%% erlang:system_info/1} on Microsoft Windows.
+%%
+%% @param Triple a host triple (string or map).
+%% @returns the normalized host triple in the same form as the given
+%% argument, or an tuple if the given host triple was not recognized.
 
 normalize(Triple, Wordsize) when is_list(Triple) orelse is_binary(Triple) ->
     case normalize(parse(Triple), Wordsize) of
@@ -114,6 +159,11 @@ normalize_vendor(Triple, _) ->
 
 -spec format(parsed_triple()) ->
     string().
+%% @doc
+%% Formats the given parsed host triple as a string.
+%%
+%% @param Triple a parsed host triple (map).
+%% @returns the host triple formatted as a string.
 
 format(#{arch := Arch, vendor := Vendor, os := OS, env := Env}) ->
     lists:flatten(
@@ -126,12 +176,25 @@ format(#{arch := Arch, vendor := Vendor, os := OS}) ->
 
 -spec native_lib_dirs(atom()) ->
     [file:filename_all()] | {error, bad_name}.
+%% @doc
+%% Computes a list of native lib directories for a given application,
+%% based on the host triple of the running Erlang VM instance.
+%%
+%% @param Application an Erlang application name.
+%% @returns the list of computed native lib directories.
 
 native_lib_dirs(Application) ->
     native_lib_dirs(Application, this_host()).
 
 -spec native_lib_dirs(atom(), iolist() | parsed_triple()) ->
     [file:filename_all()] | {error, bad_name}.
+%% @doc
+%% Computes a list of native lib directories for a given application,
+%% based on the given host triple.
+%%
+%% @param Application an Erlang application name.
+%% @param Triple a host triple.
+%% @returns the list of computed native lib directories.
 
 native_lib_dirs(Application, Triple)
   when is_list(Triple) orelse is_binary(Triple) ->
